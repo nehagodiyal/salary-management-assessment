@@ -39,7 +39,7 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />, { route: '/login' });
 
     await user.type(screen.getByLabelText(/email/i), 'admin@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.type(screen.getByLabelText('Password'), 'password123');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => expect(authService.login).toHaveBeenCalledTimes(1));
@@ -55,7 +55,7 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />, { route: '/login' });
 
     await user.type(screen.getByLabelText(/email/i), 'admin@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'wrongpassword');
+    await user.type(screen.getByLabelText('Password'), 'wrongpassword');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(await screen.findByText(/invalid email or password/i)).toBeInTheDocument();
@@ -79,7 +79,7 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />, { route: '/login' });
 
     await user.type(screen.getByLabelText(/email/i), 'plain@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.type(screen.getByLabelText('Password'), 'password123');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(await screen.findByText(/only administrators/i)).toBeInTheDocument();

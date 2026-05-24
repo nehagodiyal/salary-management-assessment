@@ -9,7 +9,7 @@ Run from the `backend/` directory:
     python scripts/seed.py --seed 7       # different random seed
 
 Performance: uses SQLAlchemy Core `insert()` + executemany in chunks so 10k
-rows complete in ~1-2s on SQLite, with `--batch-size` commits.
+rows complete in a few seconds on Postgres, with `--batch-size` commits.
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ from app.core.logger import configure_logging, get_logger  # noqa: E402
 from app.db.session import SessionLocal  # noqa: E402
 from app.models.employee import Employee  # noqa: E402
 
-# ---------- File layout (per prompts/seeding.md) ----------
+# ---------- File layout (per artifacts/seeding.md) ----------
 
 DATA_DIR = Path(__file__).resolve().parent
 FIRST_NAMES_PATH = DATA_DIR / "first_names.txt"

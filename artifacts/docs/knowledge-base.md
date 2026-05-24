@@ -29,9 +29,19 @@
 ## Why Formik + Yup
 - Declarative form state + schema validation for the employee form
 
-## Why SQLite
-- Assessment simplicity
-- Easy local setup
+## Why PostgreSQL (local + deploy target)
+- Production-grade: persistent storage, concurrent writes, real types
+- SQLAlchemy URL-driven, so local dev and Render share the same code path
+- Local: `postgresql+psycopg2://postgres:***@localhost:5432/salary_management`
+- Driver: `psycopg2-binary==2.9.10` (2.9.9 has no wheel for Python 3.13)
+
+# Companion Docs
+- [README.md](../README.md) — project overview, quick-start, repo layout
+- [setup.md](setup.md) — clone-to-running guide + troubleshooting
+- [architecture.md](architecture.md) — HLD/LLD with Mermaid diagrams
+- [design-decisions.md](design-decisions.md) — every major choice + alternatives considered + tradeoffs
+- [performance.md](performance.md) — indexes, pagination, bulk insert, query design
+- [tests.md](tests.md) — testing approach
 
 # Patterns Used
 - MVC
@@ -54,6 +64,16 @@
 - Frontend: admin-only sign-in; non-admin tokens are discarded post-login
 - Frontend stores tokens in localStorage; Axios interceptor auto-refreshes on 401
 
+# Analytics Surface
+- `GET /analytics/salary-stats` — global min/max/avg/median/count
+- `GET /analytics/country/{country}/salary-stats` — same metrics filtered to one country
+- `GET /analytics/avg-salary/job-title?country=…` — global or country-filtered
+- `GET /analytics/avg-salary/country` / `…/department` — group-wise averages
+- `GET /analytics/count/country` / `…/department` — head-counts
+- `GET /analytics/top/country` / `…/department` — single highest-paying group
+- `GET /analytics/dashboard` — bundled payload for one-round-trip dashboards
+- Analytics page exposes a country filter that re-scopes stats panel + job-title chart
+
 # Common Issues
 
 ## Token Expired
@@ -67,7 +87,6 @@ Solution:
 
 # Future Improvements
 - Redis
-- PostgreSQL
 - Audit Logs
 - Docker Compose
 - CI/CD

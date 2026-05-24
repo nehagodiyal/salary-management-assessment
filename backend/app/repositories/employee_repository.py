@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
@@ -67,14 +67,37 @@ class EmployeeRepository(BaseRepository[Employee]):
         total = int(self.db.execute(count_stmt).scalar_one())
         return items, total
 
+    # ---------- Facets (distinct value lookup) ----------
+
+    def distinct_countries(self) -> List[str]:
+        return self._distinct(Employee.country)
+
+    def distinct_departments(self) -> List[str]:
+        return self._distinct(Employee.department)
+
+    def distinct_job_titles(self) -> List[str]:
+        return self._distinct(Employee.job_title)
+
+    def _distinct(self, column) -> List[str]:
+        """Sorted, non-null, unique values for an indexed column.
+
+        Bounded by the column's cardinality so a bare `SELECT DISTINCT` is
+        fine even at 10k+ rows.
+        """
+        return list(
+            self.db.execute(
+                select(column).distinct().where(column.is_not(None)).order_by(column)
+            ).scalars().all()
+        )
+
     # ---------- Internal ----------
 
     @staticmethod
     def _apply_filters(stmt: Select, filters: EmployeeFilter) -> Select:
         if filters.search:
             needle = f"%{filters.search.lower()}%"
-            # case-insensitive LIKE via `lower()` keeps the query portable
-            # across SQLite (no ILIKE) and Postgres.
+            # case-insensitive LIKE via `lower()` — works on Postgres without
+            # depending on dialect-specific operators like ILIKE.
             stmt = stmt.where(
                 or_(
                     func.lower(Employee.full_name).like(needle),

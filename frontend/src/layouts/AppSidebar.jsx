@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Drawer,
   Box,
@@ -13,65 +14,119 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import InsightsIcon from '@mui/icons-material/Insights';
 import PaidIcon from '@mui/icons-material/Paid';
+import PersonAddIcon from '@mui/icons-material/PersonAddAlt1';
+import EditIcon from '@mui/icons-material/Edit';
 import { NavLink, useLocation } from 'react-router-dom';
 
-const nav = [
-  { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
-  { to: '/employees', label: 'Employees', icon: PeopleIcon },
-  { to: '/analytics', label: 'Analytics', icon: InsightsIcon },
-];
+import { useAuth } from '@/hooks/useAuth.jsx';
+import EmployeePickerDialog from '@/components/employees/EmployeePickerDialog';
 
-function NavItems({ onNavigate }) {
+function NavItems({ onNavigate, isAdmin, onPick }) {
   const { pathname } = useLocation();
+
+  const items = [
+    { kind: 'link', to: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
+    { kind: 'link', to: '/employees', label: 'Employees', icon: PeopleIcon },
+    ...(isAdmin
+      ? [
+          {
+            kind: 'link',
+            to: '/employees/new',
+            label: 'Add Employee',
+            icon: PersonAddIcon,
+            activeWhen: '/employees/new',
+          },
+          {
+            kind: 'action',
+            label: 'Edit Employee',
+            icon: EditIcon,
+            onClick: onPick,
+          },
+        ]
+      : []),
+    { kind: 'link', to: '/analytics', label: 'Analytics', icon: InsightsIcon },
+  ];
+
   return (
     <List sx={{ px: 1.25, pt: 1 }}>
-      {nav.map(({ to, label, icon: Icon }) => {
-        const active = pathname.startsWith(to);
-        return (
-          <ListItemButton
-            key={to}
-            component={NavLink}
-            to={to}
-            onClick={onNavigate}
-            sx={{
-              borderRadius: 2.5,
-              mb: 0.75,
-              py: 1.2,
-              color: active ? 'primary.main' : 'text.secondary',
-              background: active
-                ? 'linear-gradient(135deg, rgba(99,102,241,0.10) 0%, rgba(139,92,246,0.10) 100%)'
-                : 'transparent',
-              position: 'relative',
-              '&::before': active
-                ? {
-                    content: '""',
-                    position: 'absolute',
-                    left: -4,
-                    top: 10,
-                    bottom: 10,
-                    width: 3,
-                    borderRadius: 2,
-                    background:
-                      'linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%)',
-                  }
-                : {},
-              '&:hover': {
-                background: active
-                  ? 'linear-gradient(135deg, rgba(99,102,241,0.14) 0%, rgba(139,92,246,0.14) 100%)'
-                  : 'rgba(15, 23, 42, 0.04)',
-              },
-            }}
-          >
+      {items.map((item) => {
+        const Icon = item.icon;
+        const active =
+          item.kind === 'link' &&
+          (item.activeWhen
+            ? pathname === item.activeWhen
+            : item.to === '/employees'
+              ? pathname === '/employees' || /^\/employees\/[^/]+$/.test(pathname)
+              : pathname.startsWith(item.to));
+
+        const baseSx = {
+          borderRadius: 2.5,
+          mb: 0.75,
+          py: 1.2,
+          color: active ? 'primary.main' : 'text.secondary',
+          background: active
+            ? 'linear-gradient(135deg, rgba(99,102,241,0.10) 0%, rgba(139,92,246,0.10) 100%)'
+            : 'transparent',
+          position: 'relative',
+          '&::before': active
+            ? {
+                content: '""',
+                position: 'absolute',
+                left: -4,
+                top: 10,
+                bottom: 10,
+                width: 3,
+                borderRadius: 2,
+                background:
+                  'linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%)',
+              }
+            : {},
+          '&:hover': {
+            background: active
+              ? 'linear-gradient(135deg, rgba(99,102,241,0.14) 0%, rgba(139,92,246,0.14) 100%)'
+              : 'rgba(15, 23, 42, 0.04)',
+          },
+        };
+
+        const inner = (
+          <>
             <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
               <Icon fontSize="small" />
             </ListItemIcon>
             <ListItemText
-              primary={label}
+              primary={item.label}
               primaryTypographyProps={{
                 fontWeight: active ? 700 : 500,
                 fontSize: 14,
               }}
             />
+          </>
+        );
+
+        if (item.kind === 'action') {
+          return (
+            <ListItemButton
+              key={item.label}
+              onClick={() => {
+                item.onClick?.();
+                onNavigate?.();
+              }}
+              sx={baseSx}
+            >
+              {inner}
+            </ListItemButton>
+          );
+        }
+
+        return (
+          <ListItemButton
+            key={item.to}
+            component={NavLink}
+            to={item.to}
+            onClick={onNavigate}
+            sx={baseSx}
+          >
+            {inner}
           </ListItemButton>
         );
       })}
@@ -109,11 +164,18 @@ function Brand() {
 }
 
 export default function AppSidebar({ width, mobileOpen, onClose, isDesktop }) {
+  const { isAdmin } = useAuth();
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   const content = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Brand />
       <Divider />
-      <NavItems onNavigate={isDesktop ? undefined : onClose} />
+      <NavItems
+        onNavigate={isDesktop ? undefined : onClose}
+        isAdmin={isAdmin}
+        onPick={() => setPickerOpen(true)}
+      />
       <Box sx={{ flexGrow: 1 }} />
       <Box sx={{ p: 2 }}>
         <Box
@@ -137,36 +199,40 @@ export default function AppSidebar({ width, mobileOpen, onClose, isDesktop }) {
     </Box>
   );
 
-  if (isDesktop) {
-    return (
-      <Drawer
-        variant="permanent"
-        open
-        sx={{
-          width,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width,
-            borderRight: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'background.paper',
-          },
-        }}
-      >
-        {content}
-      </Drawer>
-    );
-  }
-
   return (
-    <Drawer
-      variant="temporary"
-      open={mobileOpen}
-      onClose={onClose}
-      ModalProps={{ keepMounted: true }}
-      sx={{ '& .MuiDrawer-paper': { width } }}
-    >
-      {content}
-    </Drawer>
+    <>
+      {isDesktop ? (
+        <Drawer
+          variant="permanent"
+          open
+          sx={{
+            width,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width,
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
+            },
+          }}
+        >
+          {content}
+        </Drawer>
+      ) : (
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={onClose}
+          ModalProps={{ keepMounted: true }}
+          sx={{ '& .MuiDrawer-paper': { width } }}
+        >
+          {content}
+        </Drawer>
+      )}
+      <EmployeePickerDialog
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+      />
+    </>
   );
 }

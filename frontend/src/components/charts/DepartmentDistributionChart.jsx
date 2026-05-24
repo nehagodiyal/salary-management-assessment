@@ -14,8 +14,16 @@ const COLORS = [
   '#ec4899',
 ];
 
-export default function DepartmentDistributionChart({ data }) {
+export default function DepartmentDistributionChart({ data, onSliceClick }) {
   const items = (data || []).map((d) => ({ name: d.group, value: d.employee_count }));
+  const clickable = typeof onSliceClick === 'function';
+
+  const handleClick = (slice) => {
+    if (!clickable) return;
+    // Recharts passes the slice payload via `slice.payload` (or top-level on some versions).
+    const name = slice?.payload?.name ?? slice?.name;
+    if (name) onSliceClick(name);
+  };
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -30,17 +38,24 @@ export default function DepartmentDistributionChart({ data }) {
           stroke="#fff"
           strokeWidth={2}
           animationDuration={800}
+          onClick={handleClick}
+          cursor={clickable ? 'pointer' : 'default'}
         >
           {items.map((_, i) => (
             <Cell key={i} fill={COLORS[i % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip content={<ChartTooltip valueFormatter={(v) => `${formatNumber(v)} people`} />} />
+        <Tooltip content={<ChartTooltip valueFormatter={(v) => `${formatNumber(v)} employees`} />} />
         <Legend
           verticalAlign="bottom"
           iconType="circle"
           wrapperStyle={{ fontSize: 12 }}
-          formatter={(v) => <span style={{ color: '#475569', marginLeft: 4 }}>{v}</span>}
+          formatter={(v) => (
+            <span style={{ color: '#475569', marginLeft: 4, cursor: clickable ? 'pointer' : 'default' }}>
+              {v}
+            </span>
+          )}
+          onClick={(entry) => clickable && onSliceClick(entry.value)}
         />
       </PieChart>
     </ResponsiveContainer>

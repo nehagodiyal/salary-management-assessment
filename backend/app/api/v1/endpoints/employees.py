@@ -6,6 +6,7 @@ from app.api.deps import CurrentUser, EmployeeServiceDep, require_roles
 from app.core.enums import EmployeeSortField, EmploymentStatus, Role, SortDirection
 from app.schemas.employee import (
     EmployeeCreate,
+    EmployeeFacets,
     EmployeeFilter,
     EmployeeRead,
     EmployeeUpdate,
@@ -52,6 +53,17 @@ def list_employees(
         page=pagination.page,
         page_size=pagination.page_size,
     )
+
+
+@router.get(
+    "/facets",
+    response_model=EmployeeFacets,
+    summary="Distinct countries / departments / job titles used in the DB",
+)
+def get_employee_facets(
+    _: CurrentUser, svc: EmployeeServiceDep
+) -> EmployeeFacets:
+    return svc.facets()
 
 
 @router.get("/{employee_id}", response_model=EmployeeRead)

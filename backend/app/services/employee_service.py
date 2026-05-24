@@ -3,7 +3,7 @@ from typing import Sequence, Tuple
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.models.employee import Employee
 from app.repositories.employee_repository import EmployeeRepository
-from app.schemas.employee import EmployeeCreate, EmployeeFilter, EmployeeUpdate
+from app.schemas.employee import EmployeeCreate, EmployeeFacets, EmployeeFilter, EmployeeUpdate
 
 
 class EmployeeService:
@@ -28,6 +28,14 @@ class EmployeeService:
     ) -> Tuple[Sequence[Employee], int]:
         self._guard_salary_range(filters.salary_min, filters.salary_max)
         return self._employees.search(filters, skip=skip, limit=limit)
+
+    def facets(self) -> EmployeeFacets:
+        """Distinct values used to drive UI dropdowns."""
+        return EmployeeFacets(
+            countries=self._employees.distinct_countries(),
+            departments=self._employees.distinct_departments(),
+            job_titles=self._employees.distinct_job_titles(),
+        )
 
     # ---------- Writes ----------
 

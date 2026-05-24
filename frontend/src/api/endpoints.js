@@ -8,10 +8,17 @@ export const endpoints = {
   employees: {
     list: '/employees',
     detail: (id) => `/employees/${id}`,
+    facets: '/employees/facets',
   },
   analytics: {
     dashboard: '/analytics/dashboard',
     salaryStats: '/analytics/salary-stats',
+    salaryStatsForCountry: (country) =>
+      `/analytics/country/${encodeURIComponent(country)}/salary-stats`,
+    salaryDistribution: '/analytics/salary-distribution',
+    percentiles: '/analytics/percentiles',
+    tenureBands: '/analytics/tenure-bands',
+    hiringTrends: '/analytics/hiring-trends',
     avgSalaryByCountry: '/analytics/avg-salary/country',
     avgSalaryByJobTitle: '/analytics/avg-salary/job-title',
     avgSalaryByDepartment: '/analytics/avg-salary/department',

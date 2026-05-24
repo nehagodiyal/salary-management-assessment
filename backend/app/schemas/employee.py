@@ -60,6 +60,18 @@ class EmployeeRead(EmployeeBase):
     updated_at: datetime
 
 
+class EmployeeFacets(BaseModel):
+    """Distinct values present in the employee table, sorted ascending.
+
+    Drives the dropdowns in the employee create/edit form so users pick from
+    the same set the rest of the system already knows about.
+    """
+
+    countries: list[str]
+    departments: list[str]
+    job_titles: list[str]
+
+
 class EmployeeFilter(BaseModel):
     """Optional query filters. None means "no constraint on this field"."""
 

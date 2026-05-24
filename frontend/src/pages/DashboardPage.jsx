@@ -18,17 +18,19 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import PublicIcon from '@mui/icons-material/Public';
 import BusinessIcon from '@mui/icons-material/Business';
 import InsightsIcon from '@mui/icons-material/Insights';
+import TimelineIcon from '@mui/icons-material/Timeline';
 
 import StatCard from '@/components/dashboard/StatCard';
 import ChartCard from '@/components/dashboard/ChartCard';
+import QuickActions from '@/components/dashboard/QuickActions';
+import StatusBreakdown from '@/components/dashboard/StatusBreakdown';
+import RecentEmployees from '@/components/dashboard/RecentEmployees';
 import ErrorState from '@/components/feedback/ErrorState';
 import AvgSalaryByCountryChart from '@/components/charts/AvgSalaryByCountryChart';
 import DepartmentDistributionChart from '@/components/charts/DepartmentDistributionChart';
-import HighestPayingJobsChart from '@/components/charts/HighestPayingJobsChart';
 import {
   useDashboardSummary,
   useAvgSalaryByCountry,
-  useAvgSalaryByJobTitle,
 } from '@/hooks/useAnalytics';
 import {
   formatCurrency,
@@ -36,12 +38,22 @@ import {
   formatNumber,
 } from '@/utils/formatters';
 import { useAuth } from '@/hooks/useAuth.jsx';
+import { SORT_FIELDS } from '@/config/constants';
 
 const greeting = () => {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
   return 'Good evening';
+};
+
+const buildQuery = (params) => {
+  const sp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') sp.set(k, String(v));
+  });
+  const s = sp.toString();
+  return s ? `?${s}` : '';
 };
 
 function HeroBanner({ user }) {
@@ -135,10 +147,9 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const summary = useDashboardSummary();
   const countryData = useAvgSalaryByCountry();
-  const jobTitleData = useAvgSalaryByJobTitle();
 
   const stats = summary.data?.salary_stats;
   const topCountry = summary.data?.highest_paying_country;
@@ -147,14 +158,19 @@ export default function DashboardPage() {
     () => summary.data?.employees_by_department || [],
     [summary.data],
   );
+  const statusBreakdown = summary.data?.employees_by_status || [];
+
+  const goEmployees = (params = {}) => navigate(`/employees${buildQuery(params)}`);
 
   const cards = [
     {
       label: 'Total employees',
       value: formatNumber(stats?.count),
+      helper: 'All active records in the system',
       icon: PeopleIcon,
       accent: 'primary',
-      onClick: () => navigate('/employees'),
+      cta: 'View all employees',
+      onClick: () => goEmployees(),
     },
     {
       label: 'Average salary',
@@ -164,8 +180,12 @@ export default function DashboardPage() {
             ? formatCurrencyCompact(Math.round(stats.average))
             : formatCurrency(Math.round(stats.average))
           : '—',
+      helper: 'Mean across the workforce',
       icon: CurrencyRupeeIcon,
       accent: 'emerald',
+      cta: 'View ranked list',
+      onClick: () =>
+        goEmployees({ sort_by: SORT_FIELDS.SALARY, sort_dir: 'desc' }),
     },
     {
       label: 'Median salary',
@@ -175,20 +195,31 @@ export default function DashboardPage() {
             ? formatCurrencyCompact(Math.round(stats.median))
             : formatCurrency(Math.round(stats.median))
           : '—',
-      icon: CurrencyRupeeIcon,
+      helper: '50th percentile of pay',
+      icon: TimelineIcon,
       accent: 'info',
+      cta: 'Open analytics',
+      onClick: () => navigate('/analytics'),
     },
     {
       label: 'Minimum salary',
       value: stats?.minimum != null ? formatCurrencyCompact(stats.minimum) : '—',
+      helper: 'Lowest paid employees first',
       icon: TrendingDownIcon,
       accent: 'warning',
+      cta: 'View lowest earners',
+      onClick: () =>
+        goEmployees({ sort_by: SORT_FIELDS.SALARY, sort_dir: 'asc' }),
     },
     {
       label: 'Maximum salary',
       value: stats?.maximum != null ? formatCurrencyCompact(stats.maximum) : '—',
+      helper: 'Highest paid employees first',
       icon: TrendingUpIcon,
       accent: 'success',
+      cta: 'View top earners',
+      onClick: () =>
+        goEmployees({ sort_by: SORT_FIELDS.SALARY, sort_dir: 'desc' }),
     },
     {
       label: 'Highest paying country',
@@ -196,9 +227,13 @@ export default function DashboardPage() {
       helper:
         topCountry?.average_salary
           ? `Avg ${formatCurrencyCompact(Math.round(topCountry.average_salary))}`
-          : null,
+          : 'No data yet',
       icon: PublicIcon,
       accent: 'rose',
+      cta: topCountry?.group ? `View ${topCountry.group} employees` : undefined,
+      onClick: topCountry?.group
+        ? () => goEmployees({ country: topCountry.group })
+        : undefined,
     },
     {
       label: 'Highest paying department',
@@ -206,15 +241,30 @@ export default function DashboardPage() {
       helper:
         topDepartment?.average_salary
           ? `Avg ${formatCurrencyCompact(Math.round(topDepartment.average_salary))}`
-          : null,
+          : 'No data yet',
       icon: BusinessIcon,
       accent: 'secondary',
+      cta: topDepartment?.group
+        ? `View ${topDepartment.group} team`
+        : undefined,
+      onClick: topDepartment?.group
+        ? () => goEmployees({ department: topDepartment.group })
+        : undefined,
     },
   ];
 
   return (
     <Box sx={{ pt: 3 }}>
       <HeroBanner user={user} />
+
+      <QuickActions canCreate={isAdmin} />
+
+      <StatusBreakdown
+        data={statusBreakdown}
+        total={stats?.count || 0}
+        loading={summary.isLoading}
+        onSelect={(status) => goEmployees({ status })}
+      />
 
       {summary.isError && (
         <Box sx={{ mb: 2 }}>
@@ -228,62 +278,62 @@ export default function DashboardPage() {
 
       <Grid container spacing={2.5}>
         {cards.map((card, idx) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} xl={3} key={idx}>
-            <StatCard
-              {...card}
-              loading={summary.isLoading}
-            />
+          <Grid item xs={12} sm={6} md={4} lg={3} key={idx}>
+            <StatCard {...card} loading={summary.isLoading} />
           </Grid>
         ))}
       </Grid>
 
       <Box sx={{ mt: 4, mb: 2 }}>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
-          Insights
+          Activity & insights
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Salary distribution across countries, departments and roles.
+          The latest hires and a high-level view of where money goes.
         </Typography>
       </Box>
 
       <Grid container spacing={2.5}>
-        <Grid item xs={12} lg={8}>
-          <ChartCard
-            title="Average salary by country"
-            subtitle="Top 10 markets by average pay"
-            height={340}
-            loading={countryData.isLoading}
-            error={countryData.error}
-            onRetry={countryData.refetch}
-            isEmpty={!countryData.isLoading && !(countryData.data?.length > 0)}
-          >
-            <AvgSalaryByCountryChart data={countryData.data} />
-          </ChartCard>
+        <Grid item xs={12} lg={7}>
+          <RecentEmployees limit={5} />
         </Grid>
-        <Grid item xs={12} lg={4}>
+        <Grid item xs={12} lg={5}>
           <ChartCard
             title="Employees by department"
-            subtitle="Current head-count split"
+            subtitle="Click a slice to drill into that team"
             height={340}
             loading={summary.isLoading}
             error={summary.error}
             onRetry={summary.refetch}
             isEmpty={!summary.isLoading && departmentDist.length === 0}
           >
-            <DepartmentDistributionChart data={departmentDist} />
+            <DepartmentDistributionChart
+              data={departmentDist}
+              onSliceClick={(name) => goEmployees({ department: name })}
+            />
           </ChartCard>
         </Grid>
         <Grid item xs={12}>
           <ChartCard
-            title="Highest paying job titles"
-            subtitle="Top 8 roles ranked by average salary"
-            height={400}
-            loading={jobTitleData.isLoading}
-            error={jobTitleData.error}
-            onRetry={jobTitleData.refetch}
-            isEmpty={!jobTitleData.isLoading && !(jobTitleData.data?.length > 0)}
+            title="Average salary by country"
+            subtitle="Top 10 markets — head to Analytics for the full breakdown"
+            height={340}
+            loading={countryData.isLoading}
+            error={countryData.error}
+            onRetry={countryData.refetch}
+            isEmpty={!countryData.isLoading && !(countryData.data?.length > 0)}
+            action={
+              <Chip
+                label="View detailed analytics"
+                size="small"
+                onClick={() => navigate('/analytics')}
+                clickable
+                color="primary"
+                variant="outlined"
+              />
+            }
           >
-            <HighestPayingJobsChart data={jobTitleData.data} />
+            <AvgSalaryByCountryChart data={countryData.data} />
           </ChartCard>
         </Grid>
       </Grid>

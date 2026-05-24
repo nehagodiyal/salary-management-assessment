@@ -2,7 +2,7 @@
 
 ## Knowledge Base Auto-Update
 
-Keep `docs/knowledge-base.md` in sync with project changes automatically — do not wait for an explicit request.
+Keep `artifacts/knowledge-base.md` in sync with project changes automatically — do not wait for an explicit request.
 
 **Only log actions, never questions.** If the user is just asking a question, seeking an explanation, or having a discussion (e.g., "is this URL correct?", "what does this do?"), do NOT add anything to the KB. The KB records what *changed* in the project, not a Q&A log.
 
@@ -12,7 +12,7 @@ Keep `docs/knowledge-base.md` in sync with project changes automatically — do 
 **Do NOT trigger on:**
 - Questions, explanations, exploratory discussion, status checks, doc reads — anything that doesn't change project state.
 
-**Map actions to sections in `docs/knowledge-base.md`:**
+**Map actions to sections in `artifacts/knowledge-base.md`:**
 - New architectural/library choice → **Engineering Decisions** (short "Why X" subsection)
 - New design pattern adopted → **Patterns Used**
 - Auth-related change → **Authentication**

@@ -144,3 +144,24 @@ def test_pagination_returns_correct_page(employee_repo, sample_dataset):
     assert total == 7
     assert len(page1) == 3 and len(page2) == 3
     assert {e.id for e in page1}.isdisjoint({e.id for e in page2})
+
+
+# ---------- Facets ----------
+
+def test_distinct_countries_empty(employee_repo):
+    assert employee_repo.distinct_countries() == []
+
+
+def test_distinct_countries_sorted(employee_repo, sample_dataset):
+    assert employee_repo.distinct_countries() == ["Germany", "India", "United States"]
+
+
+def test_distinct_departments_sorted(employee_repo, sample_dataset):
+    assert employee_repo.distinct_departments() == ["Engineering", "HR", "Sales"]
+
+
+def test_distinct_job_titles_unique_and_sorted(employee_repo, sample_dataset):
+    titles = employee_repo.distinct_job_titles()
+    assert titles == sorted(titles)
+    assert len(titles) == len(set(titles))
+    assert "Software Engineer" in titles

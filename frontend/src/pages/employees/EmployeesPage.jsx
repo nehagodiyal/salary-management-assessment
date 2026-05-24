@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -17,6 +18,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
 
 import PageHeader from '@/components/feedback/PageHeader';
 import DataTable from '@/components/common/DataTable';
@@ -41,6 +43,15 @@ const STATUS_COLOR = {
   terminated: 'default',
 };
 
+const SORT_LABELS = {
+  full_name: 'Name',
+  salary: 'Salary',
+  hire_date: 'Hire date',
+  country: 'Country',
+  department: 'Department',
+  created_at: 'Created at',
+};
+
 export default function EmployeesPage() {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -49,21 +60,60 @@ export default function EmployeesPage() {
   const { isAdmin } = useAuth();
   const snackbar = useSnackbar();
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [search, setSearch] = useState('');
-  const [country, setCountry] = useState('');
-  const [department, setDepartment] = useState('');
-  const [status, setStatus] = useState('');
-  const [sort, setSort] = useState({
-    sortBy: SORT_FIELDS.CREATED_AT,
-    sortDir: 'desc',
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ---- URL-driven filter/sort/pagination state ----
+  const page = parseInt(searchParams.get('page') || '1', 10) || 1;
+  const pageSize =
+    parseInt(searchParams.get('page_size') || String(DEFAULT_PAGE_SIZE), 10) ||
+    DEFAULT_PAGE_SIZE;
+  const country = searchParams.get('country') || '';
+  const department = searchParams.get('department') || '';
+  const status = searchParams.get('status') || '';
+  const sortBy = searchParams.get('sort_by') || SORT_FIELDS.CREATED_AT;
+  const sortDir = searchParams.get('sort_dir') || 'desc';
+
+  // Search is debounced — keep it as local state so the input doesn't churn
+  // the URL on every keystroke.
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+
+  const updateParams = useCallback(
+    (updates, { resetPage = true } = {}) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          Object.entries(updates).forEach(([k, v]) => {
+            if (v === '' || v === null || v === undefined) next.delete(k);
+            else next.set(k, String(v));
+          });
+          if (resetPage) next.delete('page');
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const clearAllFilters = () => {
+    setSearchParams({}, { replace: true });
+    setSearch('');
+  };
+
+  const activeFilters = useMemo(
+    () =>
+      [
+        country && { key: 'country', label: `Country: ${country}` },
+        department && { key: 'department', label: `Department: ${department}` },
+        status && { key: 'status', label: `Status: ${titleCase(status)}` },
+      ].filter(Boolean),
+    [country, department, status],
+  );
 
   const [toDelete, setToDelete] = useState(null);
   const deleteMutation = useDeleteEmployee();
 
-  const params = useMemo(
+  const queryParams = useMemo(
     () => ({
       page,
       page_size: pageSize,
@@ -71,23 +121,21 @@ export default function EmployeesPage() {
       country,
       department,
       status,
-      sort_by: sort.sortBy,
-      sort_dir: sort.sortDir,
+      sort_by: sortBy,
+      sort_dir: sortDir,
     }),
-    [page, pageSize, search, country, department, status, sort],
+    [page, pageSize, search, country, department, status, sortBy, sortDir],
   );
 
   const { data, isLoading, isError, error, refetch, isFetching } =
-    useEmployeesQuery(params);
+    useEmployeesQuery(queryParams);
 
   const handleSearch = useCallback((val) => {
     setSearch(val);
-    setPage(1);
   }, []);
 
   const handleSortChange = (next) => {
-    setSort(next);
-    setPage(1);
+    updateParams({ sort_by: next.sortBy, sort_dir: next.sortDir });
   };
 
   const handleDelete = async () => {
@@ -214,6 +262,7 @@ export default function EmployeesPage() {
                       e.stopPropagation();
                       setToDelete(r);
                     }}
+                    aria-label="delete"
                   >
                     <DeleteIcon fontSize="small" />
                   </IconButton>
@@ -255,7 +304,13 @@ export default function EmployeesPage() {
     <Box sx={{ pt: 2 }}>
       <PageHeader
         title="Employees"
-        subtitle="Search, filter and manage your workforce."
+        subtitle={
+          sortBy === SORT_FIELDS.SALARY && sortDir === 'desc'
+            ? 'Ranked by salary — top earners first.'
+            : sortBy === SORT_FIELDS.SALARY && sortDir === 'asc'
+              ? 'Ranked by salary — lowest first.'
+              : 'Search, filter and manage your workforce.'
+        }
         action={
           isAdmin && (
             <Button
@@ -269,6 +324,31 @@ export default function EmployeesPage() {
           )
         }
       />
+
+      {activeFilters.length > 0 && (
+        <Alert
+          severity="info"
+          icon={<FilterAltIcon fontSize="small" />}
+          sx={{ mb: 2, alignItems: 'center' }}
+          action={
+            <Button color="inherit" size="small" onClick={clearAllFilters}>
+              Clear all
+            </Button>
+          }
+        >
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Box sx={{ fontWeight: 600 }}>Active filters:</Box>
+            {activeFilters.map((f) => (
+              <Chip
+                key={f.key}
+                label={f.label}
+                size="small"
+                onDelete={() => updateParams({ [f.key]: '' })}
+              />
+            ))}
+          </Stack>
+        </Alert>
+      )}
 
       <Card sx={{ p: { xs: 1.5, sm: 2 }, mb: 2 }}>
         <Stack
@@ -287,10 +367,7 @@ export default function EmployeesPage() {
             label="Country"
             size="small"
             value={country}
-            onChange={(e) => {
-              setCountry(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => updateParams({ country: e.target.value })}
             sx={{ minWidth: { md: 160 } }}
             fullWidth={isXSmall}
           />
@@ -298,10 +375,7 @@ export default function EmployeesPage() {
             label="Department"
             size="small"
             value={department}
-            onChange={(e) => {
-              setDepartment(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => updateParams({ department: e.target.value })}
             sx={{ minWidth: { md: 160 } }}
             fullWidth={isXSmall}
           />
@@ -310,10 +384,7 @@ export default function EmployeesPage() {
             label="Status"
             size="small"
             value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => updateParams({ status: e.target.value })}
             sx={{ minWidth: { md: 160 } }}
             fullWidth={isXSmall}
           >
@@ -328,11 +399,7 @@ export default function EmployeesPage() {
       </Card>
 
       {isError ? (
-        <ErrorState
-          error={error}
-          onRetry={refetch}
-          label="Could not load employees"
-        />
+        <ErrorState error={error} onRetry={refetch} label="Could not load employees" />
       ) : (
         <>
           <Box sx={{ overflowX: 'auto' }}>
@@ -341,7 +408,7 @@ export default function EmployeesPage() {
               rows={data?.items || []}
               rowKey={(r) => r.id}
               loading={isLoading || (isFetching && !data)}
-              sort={sort}
+              sort={{ sortBy, sortDir }}
               onSortChange={handleSortChange}
               onRowClick={(r) => navigate(`/employees/${r.id}`)}
               emptyTitle="No employees found"
@@ -352,11 +419,12 @@ export default function EmployeesPage() {
             pageSize={pageSize}
             total={data?.total ?? 0}
             pages={data?.pages ?? 0}
-            onPageChange={setPage}
-            onPageSizeChange={(s) => {
-              setPageSize(s);
-              setPage(1);
-            }}
+            onPageChange={(p) =>
+              updateParams({ page: p }, { resetPage: false })
+            }
+            onPageSizeChange={(s) =>
+              updateParams({ page_size: s }, { resetPage: true })
+            }
           />
         </>
       )}

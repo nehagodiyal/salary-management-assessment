@@ -30,7 +30,10 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # ----- Database -----
-    DATABASE_URL: str = f"sqlite:///{BASE_DIR / 'salary.db'}"
+    # Production runs on PostgreSQL. The test suite overrides this with an
+    # in-memory SQLite URL via conftest.py — `is_sqlite` lets the engine layer
+    # branch on that.
+    DATABASE_URL: str = "postgresql+psycopg2://postgres@localhost:5432/salary_management"
     DB_ECHO: bool = False
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 10

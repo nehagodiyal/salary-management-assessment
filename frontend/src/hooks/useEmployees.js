@@ -17,6 +17,14 @@ export const useEmployeeQuery = (id) =>
     enabled: !!id,
   });
 
+export const useEmployeeFacets = () =>
+  useQuery({
+    queryKey: queryKeys.employees.facets,
+    queryFn: () => employeeService.facets(),
+    // Facets only change when someone adds a brand-new value — cache aggressively.
+    staleTime: 5 * 60_000,
+  });
+
 export const useCreateEmployee = () => {
   const qc = useQueryClient();
   return useMutation({

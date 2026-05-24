@@ -1,4 +1,5 @@
 import { Card, CardActionArea, CardContent, Skeleton, Stack, Typography, Box } from '@mui/material';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const ACCENTS = {
   primary: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
@@ -20,11 +21,21 @@ export default function StatCard({
   loading = false,
   onClick,
   trend,
+  cta,
 }) {
   const gradient = ACCENTS[accent] || ACCENTS.primary;
+  const isInteractive = !!onClick;
 
   const body = (
-    <CardContent sx={{ p: { xs: 2.25, sm: 2.75 }, position: 'relative' }}>
+    <CardContent
+      sx={{
+        p: { xs: 2.25, sm: 2.5 },
+        position: 'relative',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Box
         sx={{
           position: 'absolute',
@@ -49,9 +60,9 @@ export default function StatCard({
         justifyContent="space-between"
         alignItems="flex-start"
         spacing={1.5}
-        sx={{ position: 'relative' }}
+        sx={{ position: 'relative', flex: 1 }}
       >
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
           <Typography
             variant="caption"
             color="text.secondary"
@@ -59,6 +70,7 @@ export default function StatCard({
               fontWeight: 600,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
+              fontSize: 11,
             }}
           >
             {label}
@@ -73,7 +85,8 @@ export default function StatCard({
                 fontWeight: 800,
                 letterSpacing: '-0.02em',
                 wordBreak: 'break-word',
-                fontSize: { xs: '1.5rem', sm: '1.75rem' },
+                fontSize: { xs: '1.5rem', sm: '1.6rem' },
+                lineHeight: 1.15,
               }}
             >
               {value ?? '—'}
@@ -107,14 +120,34 @@ export default function StatCard({
               {trend.label}
             </Typography>
           )}
+
+          <Box sx={{ flex: 1 }} />
+
+          {cta && isInteractive && !loading && (
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.5}
+              sx={{
+                mt: 1.5,
+                color: 'primary.main',
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: '0.02em',
+              }}
+            >
+              <span>{cta}</span>
+              <ArrowForwardIcon sx={{ fontSize: 14 }} />
+            </Stack>
+          )}
         </Box>
         {Icon && (
           <Box
             sx={{
               flexShrink: 0,
-              width: 48,
-              height: 48,
-              borderRadius: 3,
+              width: 44,
+              height: 44,
+              borderRadius: 2.5,
               background: gradient,
               color: '#fff',
               display: 'grid',
@@ -122,7 +155,7 @@ export default function StatCard({
               boxShadow: '0 8px 16px -4px rgba(15, 23, 42, 0.2)',
             }}
           >
-            <Icon />
+            <Icon fontSize="small" />
           </Box>
         )}
       </Stack>
@@ -134,13 +167,16 @@ export default function StatCard({
       sx={{
         height: '100%',
         overflow: 'hidden',
-        '&:hover': onClick
-          ? { transform: 'translateY(-2px)', boxShadow: 6 }
+        '&:hover': isInteractive
+          ? { transform: 'translateY(-3px)', boxShadow: 8 }
           : { boxShadow: 3 },
       }}
     >
-      {onClick ? (
-        <CardActionArea onClick={onClick} sx={{ height: '100%' }}>
+      {isInteractive ? (
+        <CardActionArea
+          onClick={onClick}
+          sx={{ height: '100%', alignItems: 'stretch' }}
+        >
           {body}
         </CardActionArea>
       ) : (

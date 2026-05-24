@@ -26,6 +26,45 @@ def test_list_requires_authentication(client):
     assert r.status_code == 401
 
 
+# ---------- Facets ----------
+
+def test_facets_requires_authentication(client):
+    r = client.get(f"{BASE}/facets")
+    assert r.status_code == 401
+
+
+def test_facets_returns_sorted_distinct_values(
+    client, regular_user, auth_header_for, sample_dataset
+):
+    r = client.get(f"{BASE}/facets", headers=auth_header_for(regular_user))
+    assert r.status_code == 200
+    body = r.json()
+    # Sorted, deduplicated values from the fixture set.
+    assert body["countries"] == ["Germany", "India", "United States"]
+    assert body["departments"] == ["Engineering", "HR", "Sales"]
+    assert "Software Engineer" in body["job_titles"]
+    # Sorted ascending
+    assert body["job_titles"] == sorted(body["job_titles"])
+
+
+def test_facets_empty_db_returns_empty_lists(
+    client, regular_user, auth_header_for
+):
+    r = client.get(f"{BASE}/facets", headers=auth_header_for(regular_user))
+    assert r.status_code == 200
+    assert r.json() == {"countries": [], "departments": [], "job_titles": []}
+
+
+def test_facets_does_not_collide_with_get_by_id(
+    client, regular_user, auth_header_for, sample_dataset
+):
+    # Regression guard: the literal path "/facets" must resolve to the facets
+    # endpoint, not be interpreted as employee_id="facets".
+    r = client.get(f"{BASE}/facets", headers=auth_header_for(regular_user))
+    assert r.status_code == 200
+    assert "countries" in r.json()
+
+
 def test_create_requires_admin(client, regular_user, auth_header_for):
     r = client.post(BASE, headers=auth_header_for(regular_user), json=_create_payload())
     assert r.status_code == 403

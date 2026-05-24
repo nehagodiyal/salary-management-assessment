@@ -13,6 +13,10 @@ export const employeeService = {
     });
     return data;
   },
+  async facets() {
+    const { data } = await httpClient.get(endpoints.employees.facets);
+    return data;
+  },
   async get(id) {
     const { data } = await httpClient.get(endpoints.employees.detail(id));
     return data;

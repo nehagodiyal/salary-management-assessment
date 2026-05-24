@@ -13,7 +13,7 @@
 # Stack
 - FastAPI
 - SQLAlchemy
-- SQLite
+- PostgreSQL
 - Pydantic
 - Alembic
 - PyJWT

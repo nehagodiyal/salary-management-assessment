@@ -6,6 +6,7 @@ export const queryKeys = {
     all: ['employees'],
     list: (params) => ['employees', 'list', params],
     detail: (id) => ['employees', 'detail', id],
+    facets: ['employees', 'facets'],
   },
   analytics: {
     dashboard: ['analytics', 'dashboard'],

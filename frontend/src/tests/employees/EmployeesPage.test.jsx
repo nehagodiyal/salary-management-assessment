@@ -42,7 +42,8 @@ describe('EmployeesPage', () => {
 
     expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument();
     expect(screen.getByText('Alan Turing')).toBeInTheDocument();
-    expect(screen.getByText('$210,000')).toBeInTheDocument();
+    // Indian formatting of 210000 → ₹2,10,000
+    expect(screen.getByText('₹2,10,000')).toBeInTheDocument();
   });
 
   it('opens delete confirmation and calls remove on confirm', async () => {
