@@ -1,0 +1,14 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# Env files — keep only the committed template
+.env
+.env.*
+!.env.example
+
+coverage
+.vite
+.DS_Store
+*.log
