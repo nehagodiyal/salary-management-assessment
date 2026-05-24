@@ -1,1 +1,0 @@
-# salaray-management

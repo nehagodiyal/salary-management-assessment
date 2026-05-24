@@ -1,2 +1,40 @@
 .DS_Store
-.pyc
+
+# ----- Python -----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ----- Virtual envs -----
+.venv/
+venv/
+env/
+
+# ----- Env files -----
+.env
+.env.*
+!.env.example
+
+# ----- Databases -----
+*.db
+*.sqlite
+*.sqlite3
+
+# ----- Testing / coverage -----
+.pytest_cache/
+.coverage
+.coverage.*
+.coverage_html/
+htmlcov/
+coverage.xml
+
+# ----- IDE -----
+.idea/
+.vscode/
+*.swp
