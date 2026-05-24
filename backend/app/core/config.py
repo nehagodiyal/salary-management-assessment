@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import List, Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -45,19 +45,18 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # ----- CORS -----
-    CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    # Stored as a CSV string to avoid pydantic-settings' JSON-decode on
+    # complex types. Use `cors_origins_list` to consume the parsed list.
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
     CORS_ALLOW_CREDENTIALS: bool = True
 
     # ----- Logging -----
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     LOG_JSON: bool = False
 
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def _split_csv(cls, value):
-        if isinstance(value, str):
-            return [v.strip() for v in value.split(",") if v.strip()]
-        return value
+    @property
+    def cors_origins_list(self) -> List[str]:
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
 
     @property
     def is_production(self) -> bool:

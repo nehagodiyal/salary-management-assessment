@@ -14,6 +14,7 @@ alembic==1.13.3
 # ----- Auth / security -----
 PyJWT==2.9.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1  # pin: passlib 1.7.4 is incompatible with bcrypt>=4.1 (loses __about__)
 python-multipart==0.0.12
 
 # ----- Utilities -----

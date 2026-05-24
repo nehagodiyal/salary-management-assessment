@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 from app.core.exceptions import UnauthorizedError
@@ -34,8 +32,8 @@ def test_refresh_token_type_is_enforced():
 
 
 def test_expired_token_raises():
-    token = create_access_token("user-123", expires_minutes=0)
-    time.sleep(1)
+    # Issue a token that was already expired one minute ago — no sleep needed.
+    token = create_access_token("user-123", expires_minutes=-1)
     with pytest.raises(UnauthorizedError):
         decode_token(token)
 

@@ -19,9 +19,14 @@ from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import Session, sessionmaker  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
+from app.core.enums import Role  # noqa: E402
+from app.core.security import hash_password  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.db.session import get_db  # noqa: E402
 from app.main import create_app  # noqa: E402
+from app.models.user import User  # noqa: E402
+from app.repositories.user_repository import UserRepository  # noqa: E402
+from app.services.auth_service import AuthService  # noqa: E402
 
 # Importing the models package ensures tables are registered on Base.metadata.
 import app.models  # noqa: E402, F401
@@ -73,3 +78,59 @@ def client(db_session) -> Generator[TestClient, None, None]:
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+# ---------- Auth fixtures ----------
+
+@pytest.fixture
+def user_repo(db_session) -> UserRepository:
+    return UserRepository(db_session)
+
+
+@pytest.fixture
+def auth_service(user_repo) -> AuthService:
+    return AuthService(user_repo)
+
+
+@pytest.fixture
+def make_user(db_session):
+    """Factory that creates and persists a user with the given role."""
+
+    def _make(
+        email: str = "alice@example.com",
+        password: str = "Sup3rSecret!",
+        role: Role = Role.USER,
+    ) -> User:
+        user = User(
+            email=email.lower(),
+            password_hash=hash_password(password),
+            role=role.value,
+        )
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+        return user
+
+    return _make
+
+
+@pytest.fixture
+def admin_user(make_user) -> User:
+    return make_user(email="admin@example.com", role=Role.ADMIN)
+
+
+@pytest.fixture
+def regular_user(make_user) -> User:
+    return make_user(email="user@example.com", role=Role.USER)
+
+
+@pytest.fixture
+def auth_header_for(auth_service):
+    """Return a callable that builds an `Authorization: Bearer ...` header
+    for any persisted user — handy for hitting protected routes in tests."""
+
+    def _build(user: User) -> dict:
+        tokens = auth_service.issue_tokens(user)
+        return {"Authorization": f"Bearer {tokens.access_token}"}
+
+    return _build

@@ -9,7 +9,7 @@ def test_settings_defaults_in_test_env():
     assert s.is_sqlite is True
 
 
-def test_cors_origins_accepts_csv_string(monkeypatch):
+def test_cors_origins_list_parses_csv(monkeypatch):
     monkeypatch.setenv("CORS_ORIGINS", "http://a.com, http://b.com")
     s = Settings()
-    assert s.CORS_ORIGINS == ["http://a.com", "http://b.com"]
+    assert s.cors_origins_list == ["http://a.com", "http://b.com"]
