@@ -21,10 +21,14 @@
 - Repository Pattern
 - Service Layer
 - Dependency Injection
+- Alembic migrations
+- Pagination schema (shared)
 
 # Authentication
 - JWT access token
 - Refresh token support
+- Role-based access control (RBAC)
+- Admin-gated user provisioning
 
 # Common Issues
 
@@ -38,7 +42,6 @@ Solution:
 - Pagination
 
 # Future Improvements
-- RBAC
 - Redis
 - PostgreSQL
 - Audit Logs

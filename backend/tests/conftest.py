@@ -19,14 +19,21 @@ from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import Session, sessionmaker  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
-from app.core.enums import Role  # noqa: E402
+from datetime import date  # noqa: E402
+
+from app.core.enums import EmploymentStatus, Role  # noqa: E402
 from app.core.security import hash_password  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.db.session import get_db  # noqa: E402
 from app.main import create_app  # noqa: E402
+from app.models.employee import Employee  # noqa: E402
 from app.models.user import User  # noqa: E402
+from app.repositories.analytics_repository import AnalyticsRepository  # noqa: E402
+from app.repositories.employee_repository import EmployeeRepository  # noqa: E402
 from app.repositories.user_repository import UserRepository  # noqa: E402
+from app.services.analytics_service import AnalyticsService  # noqa: E402
 from app.services.auth_service import AuthService  # noqa: E402
+from app.services.employee_service import EmployeeService  # noqa: E402
 
 # Importing the models package ensures tables are registered on Base.metadata.
 import app.models  # noqa: E402, F401
@@ -134,3 +141,79 @@ def auth_header_for(auth_service):
         return {"Authorization": f"Bearer {tokens.access_token}"}
 
     return _build
+
+
+# ---------- Employee / Analytics fixtures ----------
+
+@pytest.fixture
+def employee_repo(db_session) -> EmployeeRepository:
+    return EmployeeRepository(db_session)
+
+
+@pytest.fixture
+def employee_service(employee_repo) -> EmployeeService:
+    return EmployeeService(employee_repo)
+
+
+@pytest.fixture
+def analytics_repo(db_session) -> AnalyticsRepository:
+    return AnalyticsRepository(db_session)
+
+
+@pytest.fixture
+def analytics_service(analytics_repo) -> AnalyticsService:
+    return AnalyticsService(analytics_repo)
+
+
+@pytest.fixture
+def make_employee(db_session):
+    """Factory for inserting an Employee directly via the session."""
+
+    _counter = {"n": 0}
+
+    def _make(
+        *,
+        full_name: str = "Test User",
+        email: str | None = None,
+        country: str = "United States",
+        department: str = "Engineering",
+        job_title: str = "Software Engineer",
+        salary: int = 90_000,
+        hire_date: date = date(2022, 1, 1),
+        status: EmploymentStatus = EmploymentStatus.ACTIVE,
+        phone: str | None = "+1-555-0100",
+    ) -> Employee:
+        _counter["n"] += 1
+        if email is None:
+            email = f"emp.{_counter['n']}@example.com"
+        employee = Employee(
+            full_name=full_name,
+            email=email.lower(),
+            phone=phone,
+            country=country,
+            department=department,
+            job_title=job_title,
+            salary=salary,
+            hire_date=hire_date,
+            status=status.value,
+        )
+        db_session.add(employee)
+        db_session.commit()
+        db_session.refresh(employee)
+        return employee
+
+    return _make
+
+
+@pytest.fixture
+def sample_dataset(make_employee):
+    """A small but analytically-interesting employee fixture set."""
+    return [
+        make_employee(country="United States", department="Engineering", job_title="Senior Engineer", salary=150_000),
+        make_employee(country="United States", department="Engineering", job_title="Software Engineer", salary=120_000),
+        make_employee(country="United States", department="Sales",       job_title="Account Executive", salary=110_000),
+        make_employee(country="Germany",       department="Engineering", job_title="Software Engineer", salary=90_000),
+        make_employee(country="Germany",       department="Sales",       job_title="Sales Manager",     salary=100_000),
+        make_employee(country="India",         department="Engineering", job_title="Software Engineer", salary=40_000),
+        make_employee(country="India",         department="HR",          job_title="Recruiter",         salary=25_000),
+    ]

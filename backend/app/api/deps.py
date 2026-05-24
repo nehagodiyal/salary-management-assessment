@@ -15,8 +15,12 @@ from app.core.exceptions import ForbiddenError, UnauthorizedError
 from app.core.security import decode_token
 from app.db.session import get_db
 from app.models.user import User
+from app.repositories.employee_repository import EmployeeRepository
+from app.repositories.analytics_repository import AnalyticsRepository
 from app.repositories.user_repository import UserRepository
+from app.services.analytics_service import AnalyticsService
 from app.services.auth_service import AuthService
+from app.services.employee_service import EmployeeService
 
 # `auto_error=False` lets us raise our own UnauthorizedError envelope instead
 # of FastAPI's default {"detail": "Not authenticated"} response.
@@ -40,6 +44,20 @@ def get_user_repository(db: DbSession) -> UserRepository:
 UserRepoDep = Annotated[UserRepository, Depends(get_user_repository)]
 
 
+def get_employee_repository(db: DbSession) -> EmployeeRepository:
+    return EmployeeRepository(db)
+
+
+EmployeeRepoDep = Annotated[EmployeeRepository, Depends(get_employee_repository)]
+
+
+def get_analytics_repository(db: DbSession) -> AnalyticsRepository:
+    return AnalyticsRepository(db)
+
+
+AnalyticsRepoDep = Annotated[AnalyticsRepository, Depends(get_analytics_repository)]
+
+
 # ---------- Services ----------
 
 def get_auth_service(user_repo: UserRepoDep) -> AuthService:
@@ -47,6 +65,20 @@ def get_auth_service(user_repo: UserRepoDep) -> AuthService:
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def get_employee_service(employee_repo: EmployeeRepoDep) -> EmployeeService:
+    return EmployeeService(employee_repo)
+
+
+EmployeeServiceDep = Annotated[EmployeeService, Depends(get_employee_service)]
+
+
+def get_analytics_service(analytics_repo: AnalyticsRepoDep) -> AnalyticsService:
+    return AnalyticsService(analytics_repo)
+
+
+AnalyticsServiceDep = Annotated[AnalyticsService, Depends(get_analytics_service)]
 
 
 # ---------- Auth guards ----------

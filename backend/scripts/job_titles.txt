@@ -1,0 +1,43 @@
+# Format: Department:Title (one per line, lines starting with # are ignored)
+Engineering:Software Engineer
+Engineering:Senior Engineer
+Engineering:Staff Engineer
+Engineering:Principal Engineer
+Engineering:Engineering Manager
+Engineering:Director of Engineering
+Engineering:QA Engineer
+Engineering:DevOps Engineer
+Engineering:Junior Engineer
+Product:Product Manager
+Product:Senior Product Manager
+Product:Head of Product
+Product:Product Designer
+Product:UX Researcher
+Sales:Account Executive
+Sales:Senior Account Executive
+Sales:Sales Manager
+Sales:Sales Director
+Sales:BDR
+Sales:Enterprise AE
+Marketing:Marketing Specialist
+Marketing:Marketing Manager
+Marketing:Content Strategist
+Marketing:SEO Lead
+Marketing:VP of Marketing
+Finance:Financial Analyst
+Finance:Controller
+Finance:Accountant
+Finance:Finance Manager
+Finance:CFO
+HR:HR Specialist
+HR:Recruiter
+HR:HR Manager
+HR:People Ops Lead
+Operations:Operations Manager
+Operations:Logistics Coordinator
+Operations:Office Manager
+Customer Success:CSM
+Customer Success:Senior CSM
+Customer Success:Support Engineer
+Customer Success:Onboarding Specialist
+Customer Success:Head of CS
